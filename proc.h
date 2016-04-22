@@ -56,7 +56,7 @@ struct proc {
   uint sz;                     // Size of process memory (bytes)
   pde_t* pgdir;                // Page table
   char *kstack;                // Bottom of kernel stack for this process
-  enum procstate state;        // Process state
+  enum procstate state;        // Process state (index of this process in the BIT/ in the array of process)
   int pid;                     // Process ID
   struct proc *parent;         // Parent process
   struct trapframe *tf;        // Trap frame for current syscall
@@ -67,7 +67,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int tickets;                 // Quantity of tickets
-  int tindex;                  // Index of this process in the BIT
+  // int index;                   //
 };
 
 // Process memory is laid out contiguously, low addresses first:
