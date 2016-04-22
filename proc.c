@@ -17,7 +17,6 @@ struct {
 
 static struct proc *initproc;
 
-int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
 
@@ -95,12 +94,6 @@ allocproc(void)
   struct proc *p;
 
   acquire(&ptable.lock);
-  // for(i = 0; i < NPROC; i++){
-  // // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  //   p = &ptable.proc[i];
-  //   if(p->state == UNUSED)
-  //     goto found;
-  // }
   if (ptable.tp > 0) {
     i = ptable.idstack[--ptable.tp];
     p = &ptable.proc[i - 1]; //Gets a free position
@@ -162,7 +155,7 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
-  p->tickets = SYST;
+  p->tickets = DEFT;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -202,6 +195,9 @@ fork(int ntick)
   int i, pid;
   struct proc *np;
 
+  //If the number of tickets is less than the minimum allowed, set the default amount
+  if(ntick < MINT) ntick = DEFT;
+
   // Allocate process.
   if((np = allocproc()) == 0)
     return -1;
@@ -216,7 +212,7 @@ fork(int ntick)
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
-  np->tickets = max(min(ntick, MAXT), MINT);
+  np->tickets = min(ntick, MAXT);
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -352,6 +348,7 @@ scheduler(void)
     if ((qttytickets = ticount(NPROC)) != 0) {
       p = &ptable.proc[bsearch(rand() % qttytickets + 1)];
       if (p->state == RUNNABLE) {
+        // cprintf(">process: %d, numtick: %d\n", p->pid, p->tickets);
 
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it

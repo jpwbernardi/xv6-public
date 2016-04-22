@@ -11,7 +11,9 @@
 int
 sys_fork(void)
 {
-  return fork(SYST);
+  int n;
+  argint(0, &n);
+  return fork(n);
 }
 
 int

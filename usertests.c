@@ -7,6 +7,7 @@
 #include "syscall.h"
 #include "traps.h"
 #include "memlayout.h"
+#include "lottery.h"
 
 char buf[8192];
 char name[3];
@@ -46,7 +47,7 @@ exitiputtest(void)
 
   printf(stdout, "exitiput test\n");
 
-  pid = fork();
+  pid = fork(DEFT);
   if(pid < 0){
     printf(stdout, "fork failed\n");
     exit();
@@ -91,7 +92,7 @@ openiputtest(void)
     printf(stdout, "mkdir oidir failed\n");
     exit();
   }
-  pid = fork();
+  pid = fork(DEFT);
   if(pid < 0){
     printf(stdout, "fork failed\n");
     exit();
@@ -312,7 +313,7 @@ pipe1(void)
     printf(1, "pipe() failed\n");
     exit();
   }
-  pid = fork();
+  pid = fork(DEFT);
   seq = 0;
   if(pid == 0){
     close(fds[0]);
@@ -362,18 +363,18 @@ preempt(void)
   int pfds[2];
 
   printf(1, "preempt: ");
-  pid1 = fork();
+  pid1 = fork(DEFT);
   if(pid1 == 0)
     for(;;)
       ;
 
-  pid2 = fork();
+  pid2 = fork(DEFT);
   if(pid2 == 0)
     for(;;)
       ;
 
   pipe(pfds);
-  pid3 = fork();
+  pid3 = fork(DEFT);
   if(pid3 == 0){
     close(pfds[0]);
     if(write(pfds[1], "x", 1) != 1)
@@ -407,7 +408,7 @@ exitwait(void)
   int i, pid;
 
   for(i = 0; i < 100; i++){
-    pid = fork();
+    pid = fork(DEFT);
     if(pid < 0){
       printf(1, "fork failed\n");
       return;
@@ -432,7 +433,7 @@ mem(void)
 
   printf(1, "mem test\n");
   ppid = getpid();
-  if((pid = fork()) == 0){
+  if((pid = fork(DEFT)) == 0){
     m1 = 0;
     while((m2 = malloc(10001)) != 0){
       *(char**)m2 = m1;
@@ -475,7 +476,7 @@ sharedfd(void)
     printf(1, "fstests: cannot open sharedfd for writing");
     return;
   }
-  pid = fork();
+  pid = fork(DEFT);
   memset(buf, pid==0?'c':'p', sizeof(buf));
   for(i = 0; i < 1000; i++){
     if(write(fd, buf, sizeof(buf)) != sizeof(buf)){
@@ -527,7 +528,7 @@ fourfiles(void)
     fname = names[pi];
     unlink(fname);
 
-    pid = fork();
+    pid = fork(DEFT);
     if(pid < 0){
       printf(1, "fork failed\n");
       exit();
@@ -539,7 +540,7 @@ fourfiles(void)
         printf(1, "create failed\n");
         exit();
       }
-      
+
       memset(buf, '0'+pi, 512);
       for(i = 0; i < 12; i++){
         if((n = write(fd, buf, 500)) != 500){
@@ -590,7 +591,7 @@ createdelete(void)
   printf(1, "createdelete test\n");
 
   for(pi = 0; pi < 4; pi++){
-    pid = fork();
+    pid = fork(DEFT);
     if(pid < 0){
       printf(1, "fork failed\n");
       exit();
@@ -778,7 +779,7 @@ concreate(void)
   for(i = 0; i < 40; i++){
     file[1] = '0' + i;
     unlink(file);
-    pid = fork();
+    pid = fork(DEFT);
     if(pid && (i % 3) == 1){
       link("C0", file);
     } else if(pid == 0 && (i % 5) == 1){
@@ -826,7 +827,7 @@ concreate(void)
 
   for(i = 0; i < 40; i++){
     file[1] = '0' + i;
-    pid = fork();
+    pid = fork(DEFT);
     if(pid < 0){
       printf(1, "fork failed\n");
       exit();
@@ -862,7 +863,7 @@ linkunlink()
   printf(1, "linkunlink test\n");
 
   unlink("x");
-  pid = fork();
+  pid = fork(DEFT);
   if(pid < 0){
     printf(1, "fork failed\n");
     exit();
@@ -882,7 +883,7 @@ linkunlink()
 
   if(pid)
     wait();
-  else 
+  else
     exit();
 
   printf(1, "linkunlink ok\n");
@@ -951,7 +952,7 @@ subdir(void)
   }
   write(fd, "ff", 2);
   close(fd);
-  
+
   if(unlink("dd") >= 0){
     printf(1, "unlink dd (non-empty dir) succeeded!\n");
     exit();
@@ -1384,30 +1385,30 @@ forktest(void)
   printf(1, "fork test\n");
 
   for(n=0; n<1000; n++){
-    pid = fork();
+    pid = fork(DEFT);
     if(pid < 0)
       break;
     if(pid == 0)
       exit();
   }
-  
+
   if(n == 1000){
     printf(1, "fork claimed to work 1000 times!\n");
     exit();
   }
-  
+
   for(; n > 0; n--){
     if(wait() < 0){
       printf(1, "wait stopped early\n");
       exit();
     }
   }
-  
+
   if(wait() != -1){
     printf(1, "wait got too many\n");
     exit();
   }
-  
+
   printf(1, "fork test OK\n");
 }
 
@@ -1424,7 +1425,7 @@ sbrktest(void)
   // can one sbrk() less than a page?
   a = sbrk(0);
   int i;
-  for(i = 0; i < 5000; i++){ 
+  for(i = 0; i < 5000; i++){
     b = sbrk(1);
     if(b != a){
       printf(stdout, "sbrk test failed %d %x %x\n", i, a, b);
@@ -1433,7 +1434,7 @@ sbrktest(void)
     *b = 1;
     a = b + 1;
   }
-  pid = fork();
+  pid = fork(DEFT);
   if(pid < 0){
     printf(stdout, "sbrk test fork failed\n");
     exit();
@@ -1453,7 +1454,7 @@ sbrktest(void)
   a = sbrk(0);
   amt = (BIG) - (uint)a;
   p = sbrk(amt);
-  if (p != a) { 
+  if (p != a) {
     printf(stdout, "sbrk test failed to grow big address space; enough phys mem?\n");
     exit();
   }
@@ -1492,11 +1493,11 @@ sbrktest(void)
     printf(stdout, "sbrk downsize failed, a %x c %x\n", a, c);
     exit();
   }
-  
+
   // can we read the kernel's memory?
   for(a = (char*)(KERNBASE); a < (char*) (KERNBASE+2000000); a += 50000){
     ppid = getpid();
-    pid = fork();
+    pid = fork(DEFT);
     if(pid < 0){
       printf(stdout, "fork failed\n");
       exit();
@@ -1516,7 +1517,7 @@ sbrktest(void)
     exit();
   }
   for(i = 0; i < sizeof(pids)/sizeof(pids[0]); i++){
-    if((pids[i] = fork()) == 0){
+    if((pids[i] = fork(DEFT)) == 0){
       // allocate a lot of memory
       sbrk(BIG - (uint)sbrk(0));
       write(fds[1], "x", 1);
@@ -1569,7 +1570,7 @@ validatetest(void)
   hi = 1100*1024;
 
   for(p = 0; p <= (uint)hi; p += 4096){
-    if((pid = fork()) == 0){
+    if((pid = fork(DEFT)) == 0){
       // try to crash the kernel by passing in a badly placed integer
       validateint((int*)p);
       exit();
@@ -1615,7 +1616,7 @@ bigargtest(void)
   int pid, fd;
 
   unlink("bigarg-ok");
-  pid = fork();
+  pid = fork(DEFT);
   if(pid == 0){
     static char *args[MAXARG];
     int i;
@@ -1713,13 +1714,16 @@ main(int argc, char *argv[])
     exit();
   }
   close(open("usertests.ran", O_CREATE));
+  printf(stdout, "\n\n-2\n\n");
 
   createdelete();
   linkunlink();
+  printf(stdout, "\n\n-1\n\n");
   concreate();
   fourfiles();
   sharedfd();
 
+  printf(stdout, "\n\n0\n\n");
   bigargtest();
   bigwrite();
   bigargtest();
@@ -1728,6 +1732,7 @@ main(int argc, char *argv[])
   validatetest();
 
   opentest();
+  printf(stdout, "\n\n1\n\n");
   writetest();
   writetest1();
   createtest();
@@ -1735,6 +1740,7 @@ main(int argc, char *argv[])
   openiputtest();
   exitiputtest();
   iputtest();
+  printf(stdout, "\n\n2\n\n");
 
   mem();
   pipe1();
@@ -1743,15 +1749,17 @@ main(int argc, char *argv[])
 
   rmdot();
   fourteen();
+  printf(stdout, "\n\n3\n\n");
   bigfile();
   subdir();
   linktest();
   unlinkread();
   dirfile();
   iref();
+  printf(stdout, "\n\n4\n\n");
   forktest();
   bigdir(); // slow
   exectest();
-
+  printf(stdout, "\n\n5\n\n");
   exit();
 }

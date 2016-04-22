@@ -67,7 +67,6 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int tickets;                 // Quantity of tickets
-  // int index;                   //
 };
 
 // Process memory is laid out contiguously, low addresses first:

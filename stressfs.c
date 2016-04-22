@@ -12,6 +12,7 @@
 #include "user.h"
 #include "fs.h"
 #include "fcntl.h"
+#include "lottery.h"
 
 int
 main(int argc, char *argv[])
@@ -24,7 +25,7 @@ main(int argc, char *argv[])
   memset(data, 'a', sizeof(data));
 
   for(i = 0; i < 4; i++)
-    if(fork() > 0)
+    if(fork(DEFT) > 0)
       break;
 
   printf(1, "write %d\n", i);
@@ -44,6 +45,6 @@ main(int argc, char *argv[])
   close(fd);
 
   wait();
-  
+
   exit();
 }
