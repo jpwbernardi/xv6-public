@@ -6,8 +6,13 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "lottery.h"
 
 struct {
+  char reset; // 1 if stcickets has been cleaned
+  int stickets[NPROC + 1]; //BIT (sum of tickets)
+  int idstack[NPROC], tp; //Stack of indexes not used in the BIT by any process
+  int procid[NPROC + 1]; //Index i represents the process's index in proc array that has i as index in the BIT array (??)
   struct spinlock lock;
   struct proc proc[NPROC];
 } ptable;
@@ -19,6 +24,48 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+/*-----------------BIT-------------------*/
+
+void
+uptick(int i, int value) //Updates the process's tickets number in the BIT
+{
+  for (; i <= NPROC; i += i & -i)
+    ptable.stickets[i] += value;
+}
+
+int
+ticount(int i) //Gets the sum of tickets from the process 1 to i in the BIT
+{
+  int count = 0;
+  for (; i > 0; i -= i & -i)
+    count += ptable.stickets[i];
+  return count;
+}
+
+void
+printbit()
+{
+  int i;
+  for (i = 1; i <= NPROC; i++)
+    cprintf("[%d]", ticount(i));
+  cprintf("\n");
+}
+
+int
+bsearch(int ticket)
+{
+  int l = 1, h = NPROC, m;
+  while (l < h) {
+      m = l + (h - l) / 2;
+      if (ticount(m) >= ticket) h = m;
+      else l = m + 1;
+  }
+  return ptable.procid[l];
+}
+
+/*---------------------------------------*/
+
 
 void
 pinit(void)
@@ -34,18 +81,24 @@ pinit(void)
 static struct proc*
 allocproc(void)
 {
-  struct proc *p;
+  int i;
   char *sp;
+  struct proc *p;
 
   acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  for(i = 0; i < NPROC; i++){
+  // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    p = &ptable.proc[i];
     if(p->state == UNUSED)
       goto found;
+  }
   release(&ptable.lock);
   return 0;
 
 found:
   p->state = EMBRYO;
+  p->tindex = ptable.idstack[--ptable.tp];
+  ptable.procid[p->tindex] = i;
   p->pid = nextpid++;
   release(&ptable.lock);
 
@@ -55,11 +108,11 @@ found:
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
-  
+
   // Leave room for trap frame.
   sp -= sizeof *p->tf;
   p->tf = (struct trapframe*)sp;
-  
+
   // Set up new context to start executing at forkret,
   // which returns to trapret.
   sp -= 4;
@@ -80,7 +133,7 @@ userinit(void)
 {
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
-  
+
   p = allocproc();
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
@@ -95,11 +148,15 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+  p->tickets = SYST;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
+  acquire(&ptable.lock);
+  uptick(p->tindex, p->tickets);
+  release(&ptable.lock);
 }
 
 // Grow current process's memory by n bytes.
@@ -108,7 +165,7 @@ int
 growproc(int n)
 {
   uint sz;
-  
+
   sz = proc->sz;
   if(n > 0){
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
@@ -126,7 +183,7 @@ growproc(int n)
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
 int
-fork(void)
+fork(int ntick)
 {
   int i, pid;
   struct proc *np;
@@ -145,6 +202,7 @@ fork(void)
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
+  np->tickets = max(min(ntick, MAXT), MINT);
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -155,14 +213,15 @@ fork(void)
   np->cwd = idup(proc->cwd);
 
   safestrcpy(np->name, proc->name, sizeof(proc->name));
- 
+
   pid = np->pid;
 
   // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
   np->state = RUNNABLE;
+  uptick(np->tindex, np->tickets);
   release(&ptable.lock);
-  
+
   return pid;
 }
 
@@ -238,6 +297,7 @@ wait(void)
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
+        ptable.idstack[ptable.tp++] = p->tindex;
         release(&ptable.lock);
         return pid;
       }
@@ -266,6 +326,16 @@ void
 scheduler(void)
 {
   struct proc *p;
+  int qttytickets;
+
+  acquire(&ptable.lock);
+  if (!ptable.reset) {
+    ptable.reset = 1;
+    for (ptable.tp = 0; ptable.tp < NPROC; ptable.tp++)
+      ptable.idstack[ptable.tp] = NPROC - ptable.tp;
+    memset(ptable.stickets, 0, sizeof (ptable.stickets));
+  }
+  release(&ptable.lock);
 
   for(;;){
     // Enable interrupts on this processor.
@@ -273,25 +343,26 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+    ; //quantity of tickets
+    if ((qttytickets = ticount(NPROC)) != 0) {
+      p = &ptable.proc[bsearch(rand() % qttytickets + 1)];
+      if (p->state == RUNNABLE) {
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        uptick(p->tindex, -p->tickets);
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&cpu->scheduler, proc->context);
+        switchkvm();
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        proc = 0;
+      }
     }
     release(&ptable.lock);
-
   }
 }
 
@@ -321,6 +392,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   proc->state = RUNNABLE;
+  uptick(proc->tindex, proc->tickets);
   sched();
   release(&ptable.lock);
 }
@@ -336,13 +408,13 @@ forkret(void)
 
   if (first) {
     // Some initialization functions must be run in the context
-    // of a regular process (e.g., they call sleep), and thus cannot 
+    // of a regular process (e.g., they call sleep), and thus cannot
     // be run from main().
     first = 0;
     iinit(ROOTDEV);
     initlog(ROOTDEV);
   }
-  
+
   // Return to "caller", actually trapret (see allocproc).
 }
 
@@ -392,8 +464,10 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if (p->state == SLEEPING && p->chan == chan) {
       p->state = RUNNABLE;
+      uptick(p->tindex, p->tickets);
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -418,8 +492,10 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING){
+        uptick(p->tindex, p->tickets);
         p->state = RUNNABLE;
+      }
       release(&ptable.lock);
       return 0;
     }
@@ -447,7 +523,7 @@ procdump(void)
   struct proc *p;
   char *state;
   uint pc[10];
-  
+
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
       continue;
