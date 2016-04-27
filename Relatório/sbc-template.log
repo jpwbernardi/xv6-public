@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=latex 2016.4.12)  27 APR 2016 18:55
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=latex 2016.4.12)  27 APR 2016 18:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -229,7 +229,7 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-(./sbc-template.bbl) [5] [6] (./sbc-template.aux) ) 
+[5] (./sbc-template.bbl [6]) [7] (./sbc-template.aux) ) 
 Here is how much of TeX's memory you used:
  2176 strings out of 495005
  28998 string characters out of 6180688
@@ -239,4 +239,4 @@ Here is how much of TeX's memory you used:
  16 hyphenation exceptions out of 8191
  30i,8n,29p,189b,310s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on sbc-template.dvi (6 pages, 33604 bytes).
+Output written on sbc-template.dvi (7 pages, 33668 bytes).
