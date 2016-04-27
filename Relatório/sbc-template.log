@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=latex 2016.4.12)  26 APR 2016 18:20
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=latex 2016.4.12)  27 APR 2016 18:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -208,55 +208,35 @@ LaTeX Font Info:    Font shape `OT1/phv/bx/n' in size <10> not available
 (Font)              Font shape `OT1/phv/b/n' tried instead on input line 76.
  [1
 
-]
-Underfull \vbox (badness 2012) has occurred while \output is active []
-
- [2]
-LaTeX Font Info:    Try loading font information for OMS+ptm on input line 167.
+] [2]
+LaTeX Font Info:    Try loading font information for OMS+ptm on input line 171.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omsptm.fd
 File: omsptm.fd 
 )
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <12> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 167.
-File: bit.eps Graphic file (type eps)
- <bit.eps> [3]
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 171.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <13> not available
-(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 196.
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 193.
+ [3] [4]
 
-[4]
-File: grafico1.eps Graphic file (type eps)
- <grafico1.eps> [5]
-File: grafico2.eps Graphic file (type eps)
- <grafico2.eps>
-File: grafico3.eps Graphic file (type eps)
- <grafico3.eps>
-File: grafico4.eps Graphic file (type eps)
- <grafico4.eps>
-File: grafico5.eps Graphic file (type eps)
+LaTeX Warning: Command \textordmasculine invalid in math mode on input line 303
+.
 
-<grafico5.eps>
-File: grafico6.eps Graphic file (type eps)
- <grafico6.eps> [6] [7]
-Underfull \vbox (badness 1168) has occurred while \output is active []
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 313.
 
- [8]
-File: fig1.eps Graphic file (type eps)
+LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-<fig1.eps>
-File: fig2.eps Graphic file (type eps)
- <fig2.eps>
-File: table.eps Graphic file (type eps)
- <table.eps> [9] (./sbc-template.bbl) [10]
-(./sbc-template.aux) ) 
+(./sbc-template.bbl) [5] [6] (./sbc-template.aux) ) 
 Here is how much of TeX's memory you used:
- 2212 strings out of 495005
- 29409 string characters out of 6180688
- 94599 words of memory out of 5000000
- 5410 multiletter control sequences out of 15000+600000
+ 2176 strings out of 495005
+ 28998 string characters out of 6180688
+ 128487 words of memory out of 5000000
+ 5384 multiletter control sequences out of 15000+600000
  14795 words of font info for 40 fonts, out of 8000000 for 9000
  16 hyphenation exceptions out of 8191
- 30i,8n,29p,257b,310s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 30i,8n,29p,189b,310s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on sbc-template.dvi (10 pages, 24284 bytes).
+Output written on sbc-template.dvi (6 pages, 33604 bytes).

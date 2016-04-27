@@ -20,14 +20,10 @@ int main(void) {
     fgets(lixo, NPROC, stdin);
     for(i = 1; i <= 61; i++){
       scanf("%d", &t);
-      procOrd[tickets[t]][n] = i;
+      procOrd[i][n] = tickets[t];
     }}
-  for(i = 0; i < NPROC; printf("\n"), i++) {
-    for(printf("%d(%d): ", i, proc[i]), n = 0, maior = 0, menor = INF; n < N; n++){
-      if(procOrd[i][n] > maior) maior = procOrd[i][n];
-      if(procOrd[i][n] < menor) menor = procOrd[i][n];
-    }
-    printf("%d, %d ", menor, maior);
-  }
+  for(i = 1; i <= NPROC;printf("\n"), i++)
+    for(n = 0; n < N; n++)
+      printf("& %d ", procOrd[i][n]);
   return 0;
 }

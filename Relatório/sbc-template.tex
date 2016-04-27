@@ -49,12 +49,12 @@ escalonador é o responsável pela escolha do processo a ser
 executado. Na troca de processos, o estado do processo atual deve ser
 salvo para que na próxima vez que ele for escolhido esses dados sejam
 recarregados e ele possa continuar a execução exatamente do momento que
-parou.
+parou \cite{knuth:84}.
 
 O método que o escalonador vai usar para escolher o próximo processo é
 chamado de algoritmo de escalonamento. Esse relatório apresenta o
 funcionamento do escalonamento por loteria com complexidade de $O(\log
-N)$, sendo $N$ a quantidade máxima de processos, e sua implementação no
+n)$, sendo $n$ a quantidade máxima de processos, e sua implementação no
 sistema operacional xv6.
 
 \section{Escalonamento por loteria}
@@ -125,10 +125,14 @@ o cálculo desses acumulos seria percorrendo o vetor e atualizando cada
 posição, uma complexidade de $O(n)$, sendo $n$ a quantidade máxima de
 processos permitidos, para cada vez que fosse necessário atualizar a
 quantidade de bilhetes um processo. Porém, existe uma estrutura de dados
-chamada BIT -- Binary Indexed Tree -- que faz essa operação com complexidade $O(\log n)$.
+chamada BIT -- Binary Indexed Tree -- que faz essa operação com
+complexidade $O(\log n)$, conforme \cite{boulic:91}.
 
 Por fim, o último método utilizado para manter a complexidade baixa é
-buscar o processo com o bilhete sorteado através de uma busca binária.
+buscar o processo com o bilhete sorteado através de uma busca
+binária. Portanto, o processo que adotamos é: sorteia um bilhete dentre
+os disponíveis, descobre que processo é dono desse bilhete através da
+busca binária, descrita a seguir.
 
 \begin{verbatim}
 int bsearch(int ticket){
@@ -166,14 +170,7 @@ De uma forma mais genérica, o elemento da posição $i$ da BIT $stickets$
 é responsável pelos elementos no intervalo [$i - (i $\verb+ AND +$-i) +
   1$, $i$] e $stickets[i]$ guarda o acumulo dos bilhetes \{$i -
 (i$\verb+ AND +$-i) + 1$, $i - (i$\verb+ AND +$-i) + 2$, $i - (i
-$\verb+ AND +$ -i) + 3$, ... , i\}, como mostrado na Figura~\ref{fig:BIT}.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.9\textwidth]{bit.eps}
-\caption{Relação das posições dependentes}
-\label{fig:BIT}
-\end{figure}
+$\verb+ AND +$ -i) + 3$, ... , i\}.
 
 Para obtermos o acúmulo de bilhetes de uma posição, usamos a função
 \emph{ticount}. Para atualizarmos uma posição da BIT com algum valor,
@@ -197,14 +194,14 @@ void uptick(int i, int value){
 
 Inicialmente, o $pid$ de um processo era definido por uma variável
 global. Toda vez que um processo recebia um $pid$, a global era
-incrementada. Porém, para facilitar a implementação e otimização de
-código, o $pid$ representa o índice da BIT associado ao processo. Toda
+incrementada. Porém, para facilitar a implementação do código e sua
+otimização, agora o $pid$ representa o índice da BIT associado ao processo. Toda
 vez que um processo termina, ele devolve seu $pid$ para a pilha
 $idstack$. Como cada processo tem um $pid$ único que varia de 1 a $n$,
 então também podemos usar o $pid$ para a indexação do processo no vetor
 de processos $ptable.proc$, obviamente subtraindo 1, pois as posições de
 $ptable.proc$ são de 0 a $n - 1$. Antes, quando um processo era criado,
-para achar uma posição livre no vetor de processos, ele era percorrido
+para achar uma posição livre no vetor de processos, este era percorrido
 linearmente. Agora, só retiramos da pilha um $pid$ disponível, o que é
 realizado em tempo $O(1)$.
 
@@ -287,10 +284,10 @@ void yield(void){
 Toda vez que o escalonador busca um processo para ser executado, é
 chamado a busca binária, que tem complexidade $O(\log n)$, porém, para
 acessar o valor do acúmulo numa posição $i$, a complexidade é também
-$O(\log n)$. Ou seja, a complexidade total para escolher um processo
+$O(\log n)$ \cite{boulic:91}. Ou seja, a complexidade total para escolher um processo
 seria $O(\log (n \cdot \log n))$. Desenvolvendo a conta:
 \begin{center}
-$O(\log(n\cdot\log n)) = O(\log n \cdot \log (\log n)) = O(\log n)$
+$O(\log(n\cdot\log n)) = O(\log n + \log (\log n)) = O(\log n)$
 \end{center}
 
 \section{Análise de testes}
@@ -302,150 +299,97 @@ acaba. Para obter os resultados do teste, foi modificado a função
 $exit()$ para que quando ela fosse chamada, exibisse a quantidade de
 tickets do processo que acabou.  Cada processo tem uma quantidade de
 bilhetes diferentes. Esse teste foi realizado 10 vezes com processos de
-mesma quantidade de bilhete.
+mesma quantidade de bilhete. A quantidade de bilhetes de cada processo
+é ${nº do processo} \cdot 64 + 1$. 
 
-O resultado obtido foi está apresentado nos seguintes gráficos,
-separados para melhor visualização. O eixo $x$ é o número do teste e o
-eixo $y$ é a ordem em que ele acabou. A quantidade de bilhetes de um
-processo está entre parenteses na legenda. Por exemplo, o processo 1 em
-todos os testes foi o 61º processo a terminar.
+O resultado obtido está apresentado na Tabela~\ref{tab:res}. Cada coluna
+representa um teste e cada linha representa a ordem que o processo
+acabou. Por exemplo, no teste 1, o processo 38 foi o 6º processo a
+terminar e no teste 7 foi o 27º.
 
-
-\begin{figure}[!h]
+\begin{table}[!h]
 \centering
-\includegraphics[width=0.9\textwidth]{grafico1.eps}
-\caption{Relação da posições dependentes}
-\label{fig:g1}
-\end{figure}
-
-\begin{figure}[!b]
-\centering
-\includegraphics[width=0.9\textwidth]{grafico2.eps}
-\caption{Relação das posições dependentes}
-\label{fig:g2}
-\end{figure}
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=0.9\textwidth]{grafico3.eps}
-\caption{Relação das posições dependentes}
-\label{fig:g3}
-\end{figure}
-
-\begin{figure}[!b]
-\centering
-\includegraphics[width=0.9\textwidth]{grafico4.eps}
-\caption{Relação das posições dependentes}
-\label{fig:g4}
-\end{figure}
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=0.9\textwidth]{grafico5.eps}
-\caption{Relação das posições dependentes}
-\label{fig:g5}
-\end{figure}
-
-\begin{figure}[!b]
-\centering
-\includegraphics[width=0.9\textwidth]{grafico6.eps}
-\caption{Relação das posições dependentes}
-\label{fig:g6}
-\end{figure}
-
-\section{First Page} \label{sec:firstpage}
-
-The first page must display the paper title, the name and address of the
-authors, the abstract in English and ``resumo'' in Portuguese (``resumos'' are
-required only for papers written in Portuguese). The title must be centered
-over the whole page, in 16 point boldface font and with 12 points of space
-before itself. Author names must be centered in 12 point font, bold, all of
-them disposed in the same line, separated by commas and with 12 points of
-space after the title. Addresses must be centered in 12 point font, also with
-12 points of space after the authors' names. E-mail addresses should be
-written using font Courier New, 10 point nominal size, with 6 points of space
-before and 6 points of space after.
-
-The abstract and ``resumo'' (if is the case) must be in 12 point Times font,
-indented 0.8cm on both sides. The word \textbf{Abstract} and \textbf{Resumo},
-should be written in boldface and must precede the text.
-
-\section{CD-ROMs and Printed Proceedings}
-
-In some conferences, the papers are published on CD-ROM while only the
-abstract is published in the printed Proceedings. In this case, authors are
-invited to prepare two final versions of the paper. One, complete, to be
-published on the CD and the other, containing only the first page, with
-abstract and ``resumo'' (for papers in Portuguese).
-
-\section{Sections and Paragraphs}
-
-Section titles must be in boldface, 13pt, flush left. There should be an extra
-12 pt of space before each title. Section numbering is optional. The first
-paragraph of each section should not be indented, while the first lines of
-subsequent paragraphs should be indented by 1.27 cm.
-
-\subsection{Subsections}
-
-The subsection titles must be in boldface, 12pt, flush left.
-
-\section{Figures and Captions}\label{sec:figs}
-
-
-Figure and table captions should be centered if less than one line
-(Figure~\ref{fig:exampleFig1}), otherwise justified and indented by 0.8cm on
-both margins, as shown in Figure~\ref{fig:exampleFig2}. The caption font must
-be Helvetica, 10 point, boldface, with 6 points of space before and after each
-caption.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=.5\textwidth]{fig1.eps}
-\caption{A typical figure}
-\label{fig:exampleFig1}
-\end{figure}
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=.3\textwidth]{fig2.eps}
-\caption{This figure is an example of a figure caption taking more than one
-  line and justified considering margins mentioned in Section~\ref{sec:figs}.}
-\label{fig:exampleFig2}
-\end{figure}
-
-In tables, try to avoid the use of colored or shaded backgrounds, and avoid
-thick, doubled, or unnecessary framing lines. When reporting empirical data,
-do not use more decimal digits than warranted by their precision and
-reproducibility. Table caption must be placed before the table (see Table 1)
-and the font used must also be Helvetica, 10 point, boldface, with 6 points of
-space before and after each caption.
-
-\begin{table}[ht]
-\centering
-\caption{Variables to be considered on the evaluation of interaction
-  techniques}
-\label{tab:exTable1}
-\includegraphics[width=.7\textwidth]{table.eps}
+\begin{scriptsize}
+\begin{tabular}{c | c | c | c | c | c | c | c | c | c}
+Teste 1 & Teste 2 & Teste 3 & Teste 4 & Teste 5 & Teste 6 & Teste 7 &
+Teste 8 & Teste 9 & Teste 10\\
+\hline
+54 & 49 & 36 & 32 & 44 & 42 & 50 & 38 & 36 & 39\\
+40 & 51 & 58 & 46 & 41 & 55 & 53 & 36 & 52 & 42\\
+59 & 52 & 59 & 42 & 45 & 59 & 58 & 40 & 45 & 48\\
+47 & 41 & 44 & 44 & 52 & 37 & 44 & 33 & 42 & 38\\
+44 & 55 & 51 & 57 & 50 & 57 & 48 & 44 & 37 & 50\\
+38 & 38 & 53 & 29 & 46 & 53 & 52 & 42 & 47 & 45\\
+49 & 46 & 35 & 45 & 42 & 33 & 49 & 43 & 41 & 51\\
+48 & 44 & 55 & 59 & 48 & 49 & 42 & 28 & 59 & 55\\
+35 & 57 & 48 & 36 & 38 & 44 & 37 & 45 & 38 & 47\\
+50 & 43 & 39 & 38 & 43 & 58 & 56 & 37 & 32 & 52\\
+60 & 60 & 54 & 34 & 49 & 47 & 60 & 48 & 40 & 53\\
+52 & 58 & 38 & 40 & 54 & 46 & 45 & 55 & 51 & 58\\
+32 & 39 & 47 & 35 & 47 & 40 & 41 & 30 & 55 & 43\\
+42 & 50 & 60 & 27 & 58 & 51 & 59 & 47 & 58 & 41\\
+55 & 48 & 43 & 52 & 53 & 45 & 34 & 60 & 39 & 49\\
+57 & 37 & 45 & 41 & 37 & 48 & 46 & 58 & 60 & 37\\
+41 & 45 & 41 & 50 & 59 & 43 & 54 & 50 & 49 & 31\\
+58 & 59 & 50 & 51 & 40 & 41 & 51 & 39 & 31 & 27\\
+51 & 35 & 46 & 31 & 31 & 32 & 40 & 49 & 50 & 46\\
+37 & 47 & 29 & 47 & 56 & 36 & 55 & 27 & 44 & 40\\
+45 & 54 & 42 & 53 & 55 & 50 & 38 & 53 & 56 & 30\\
+53 & 33 & 26 & 37 & 57 & 34 & 30 & 32 & 53 & 44\\
+56 & 56 & 56 & 54 & 60 & 30 & 36 & 54 & 54 & 54\\
+36 & 42 & 24 & 39 & 34 & 56 & 57 & 35 & 29 & 33\\
+33 & 40 & 57 & 30 & 36 & 60 & 39 & 52 & 57 & 57\\
+30 & 32 & 34 & 60 & 39 & 54 & 43 & 56 & 43 & 35\\
+43 & 53 & 33 & 58 & 23 & 39 & 47 & 29 & 27 & 60\\
+39 & 34 & 49 & 43 & 28 & 52 & 35 & 41 & 48 & 32\\
+31 & 26 & 52 & 26 & 51 & 25 & 25 & 57 & 46 & 36\\
+29 & 30 & 23 & 55 & 29 & 35 & 26 & 34 & 33 & 56\\
+46 & 29 & 40 & 23 & 35 & 26 & 29 & 46 & 34 & 25\\
+28 & 28 & 30 & 48 & 27 & 31 & 31 & 51 & 25 & 34\\
+21 & 27 & 37 & 49 & 19 & 38 & 32 & 59 & 28 & 59\\
+34 & 36 & 32 & 25 & 26 & 23 & 33 & 31 & 24 & 26\\
+22 & 24 & 28 & 56 & 24 & 29 & 27 & 21 & 35 & 21\\
+27 & 25 & 19 & 33 & 33 & 24 & 21 & 25 & 22 & 28\\
+26 & 31 & 31 & 21 & 32 & 18 & 28 & 26 & 23 & 20\\
+23 & 23 & 22 & 28 & 22 & 28 & 23 & 23 & 26 & 23\\
+25 & 22 & 25 & 17 & 30 & 27 & 24 & 22 & 30 & 24\\
+20 & 21 & 27 & 22 & 25 & 20 & 22 & 24 & 21 & 29\\
+24 & 19 & 14 & 24 & 18 & 21 & 19 & 19 & 19 & 17\\
+19 & 14 & 16 & 19 & 21 & 13 & 20 & 17 & 18 & 19\\
+18 & 20 & 15 & 20 & 15 & 17 & 18 & 20 & 20 & 22\\
+15 & 18 & 20 & 18 & 20 & 22 & 15 & 18 & 17 & 14\\
+17 & 16 & 18 & 16 & 16 & 19 & 17 & 16 & 15 & 18\\
+16 & 15 & 17 & 15 & 13 & 16 & 16 & 15 & 16 & 15\\
+13 & 13 & 21 & 11 & 17 & 15 & 14 & 12 & 14 & 16\\
+14 & 12 & 13 & 13 & 14 & 14 & 12 & 11 & 13 & 12\\
+11 & 17 & 11 & 10 & 12 & 12 & 13 & 14 & 12 & 13\\
+10 & 8 & 12 & 12 & 11 & 11 & 10 & 13 & 10 & 10\\
+12 & 11 & 9 & 14 & 9 & 10 & 11 & 10 & 11 & 9\\
+9 & 9 & 10 & 8 & 8 & 9 & 8 & 8 & 9 & 11\\
+8 & 10 & 8 & 7 & 7 & 8 & 7 & 9 & 8 & 8\\
+6 & 5 & 7 & 9 & 10 & 6 & 9 & 7 & 6 & 7\\
+7 & 7 & 6 & 6 & 6 & 7 & 6 & 5 & 7 & 6\\
+5 & 6 & 5 & 5 & 5 & 5 & 5 & 6 & 5 & 5\\
+4 & 4 & 4 & 4 & 4 & 4 & 4 & 4 & 4 & 4\\
+3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3\\
+2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2\\
+1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1\\
+\end{tabular}
+\end{scriptsize}
+\caption{Resultados}
+\label{tab:res}
 \end{table}
 
-\section{Images}
+Como podemos observar, um processo ter mais bilhetes não é garantia de
+que ele vai ganhar mais tempo no processador. Possívelmente pela pouca
+diferença de bilhetes entre cada processo e pelo $rand$ que foi
+implementado para os testes, isso se tornou mais evidente. Um exemplo
+disso é o processo 60 que foi o 26º a terminar no teste 4, embora possuísse mais
+bilhetes que qualquer outro processo, e nunca terminou por primeiro.
 
-All images and illustrations should be in black-and-white, or gray tones,
-excepting for the papers that will be electronically available (on CD-ROMs,
-internet, etc.). The image resolution on paper should be about 600 dpi for
-black-and-white images, and 150-300 dpi for grayscale images.  Do not include
-images with excessive resolution, as they may take hours to print, without any
-visible difference in the result. 
-
-\section{References}
-
-Bibliographic references must be unambiguous and uniform.  We recommend giving
-the author names references in brackets, e.g. \cite{knuth:84},
-\cite{boulic:91}, and \cite{smith:99}.
-
-The references must be listed using 12 point font size, with 6 points of space
-before each reference. The first line of each reference should not be
-indented, while the subsequent should be indented by 0.5 cm.
+Vale ressaltar que, embora aconteça o descrito acima, os processos com
+mais bilhetes ainda tendem a terminar antes, mas por ser um algoritmo
+probabilístico, não temos como dizer que isso sempre ocorre. 
 
 \bibliographystyle{sbc}
 \bibliography{sbc-template}
