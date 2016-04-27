@@ -105,8 +105,6 @@ allocproc(void)
 found:
   p->pid = i;
   p->state = EMBRYO;
-  // p->index = ptable.idstack[--ptable.tp];
-  // ptable.procid[p->tindex] = i;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -263,6 +261,7 @@ exit(void)
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
+  // cprintf("%d\n", proc->tickets); -> Used for tests
   wakeup1(proc->parent);
 
   // Pass abandoned children to init.
