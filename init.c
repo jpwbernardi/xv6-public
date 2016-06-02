@@ -4,7 +4,7 @@
 #include "stat.h"
 #include "user.h"
 #include "fcntl.h"
-#include "lottery.h"
+#include "stride.h"
 
 char *argv[] = { "sh", 0 };
 

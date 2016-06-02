@@ -1,4 +1,4 @@
-#include "lottery.h"
+#include "stride.h"
 #include "types.h"
 #include "user.h"
 

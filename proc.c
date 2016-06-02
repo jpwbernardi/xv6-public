@@ -6,7 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "lottery.h"
+#include "stride.h"
 
 struct {
   int stickets[NPROC + 1]; //BIT (sum of tickets)

@@ -10,13 +10,13 @@ OBJS = \
 	kbd.o\
 	lapic.o\
 	log.o\
-	lottery.o\
 	main.o\
 	mp.o\
 	picirq.o\
 	pipe.o\
 	proc.o\
 	spinlock.o\
+	stride.o\
 	string.o\
 	swtch.o\
 	syscall.o\

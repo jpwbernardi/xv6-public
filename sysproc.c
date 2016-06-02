@@ -6,7 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "lottery.h"
+#include "stride.h"
 
 int
 sys_fork(void)

@@ -3,7 +3,7 @@
 #include "types.h"
 #include "user.h"
 #include "fcntl.h"
-#include "lottery.h"
+#include "stride.h"
 
 // Parsed command representation
 #define EXEC  1

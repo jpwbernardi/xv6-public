@@ -4,7 +4,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "lottery.h"
+#include "stride.h"
 
 int
 main(void)
