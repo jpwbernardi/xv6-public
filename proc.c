@@ -354,41 +354,28 @@ scheduler(void)
 
   for(;;){
     // Enable interrupts on this processor.
-    //cprintf("Init\n");
     sti();
-    //cprintf("Foi?\n");
-    // int cont = 0;
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
-    // printdeb();
-    //if ((pid = find()) != 0) {
     if ((pid = query(1, 0, NPROC, 0, NPROC)) != 0) {
-      // cprintf("%d\n\n", pid);
       p = &ptable.proc[pid - 1];
-      if (p->state == RUNNABLE) {
-        // cprintf(">process: %d, numtick: %d\n", p->pid, p->tickets);
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      p->prevstride = ptable.stride[pid]; ptable.stride[pid] = INF;
+      update(1, 0, NPROC, pid);
+      proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      swtch(&cpu->scheduler, proc->context);
+      switchkvm();
 
-        // Switch to chosen process.  It is the process's job
-        // to release ptable.lock and then reacquire it
-        // before jumping back to us.
-        p->prevstride = ptable.stride[pid]; ptable.stride[pid] = INF;
-        update(1, 0, NPROC, pid);
-        proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
-        swtch(&cpu->scheduler, proc->context);
-        switchkvm();
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        proc = 0;
-      }
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      proc = 0;
     }
-    // printdeb();
     release(&ptable.lock);
-    // cprintf("Oi cont++!\n");
-    // cont++;
   }
 }
 

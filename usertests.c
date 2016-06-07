@@ -367,12 +367,12 @@ preempt(void)
   if(pid1 == 0)
     for(;;)
       ;
-
+  printf(1, "1\n");
   pid2 = fork(DEFT);
   if(pid2 == 0)
     for(;;)
       ;
-
+  printf(1, "2\n");
   pipe(pfds);
   pid3 = fork(DEFT);
   if(pid3 == 0){
