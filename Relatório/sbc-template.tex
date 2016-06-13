@@ -24,56 +24,60 @@
 \maketitle
 
 \begin{abstract}
-In a lottery scheduler, for each process is given a certain amount of tickets.
-A random ticket is selected and the process that owns that ticket is executed.
-This report shows the lottery sceduler's BIT -- Binary Indexed Tree -- implementation
- on \textit{xv6} and analyzes if works as required.
+This paper presents lottery scheduling and stride scheduling
+implementation on xv6 operating system and analyzes if works as
+required. For the schedulers' implementation were used a Binary
+Indexed Tree -- BIT -- and a Segment Tree, both will be explained in this
+paper and from them we obtain a complexity analyzis.
 \end{abstract}
 
 \begin{resumo}
-
-No escalonamento por loteria, cada processo recebe uma quantidade de bilhetes.
-O processo com o bilhete sorteado é executado. Nesse relatório, apresentamos
- uma implementação feita com uma BIT -- Binary Indexed Tree -- para o
- escalonador por loteria no sistema operacional \textit{xv6} e analisamos seu
-funcionamento.
+Este trabalho descreverá a implementação de dois processos de
+escalonamento distintos no sistema operacional \textit{xv6}, o
+escalonamento por loteria (\textit{lottery scheduling}) e o escalonamento
+em passos largos (\textit{stride scheduling}), com as respectivas
+análises de funcionamento. Nas implementações são apresentadas as estruturas de
+dados BIT -- Binary Indexed Tree -- e árvore de segmento e, apartir
+dela, obtemos a complexidade de cada uma das soluções.
 \end{resumo}
 
 \section{Introdução}
 
-Os sistemas operacionais executam vários processos ao mesmo tempo, ou,
-pelo menos, é essa a impressão que temos. Um CPU não consegue executar
-mais de um processo simultaneamente, o que ocorre é que todo processo
-está competindo para ganhar fatias de tempo do processador. O
-escalonador é o responsável pela escolha do processo a ser
-executado. Na troca de processos, o estado do processo atual deve ser
-salvo para que na próxima vez que ele for escolhido esses dados sejam
-recarregados e ele possa continuar a execução exatamente do momento que
-parou \cite{knuth:84}.
+Os sistemas operacionais atuais executam
+vários processos ao mesmo tempo, ou, pelo menos, é essa a impressão que
+temos. Um processador não consegue executar mais de um processo
+simultaneamente. Então, todo processo pronto para ser executado está
+competindo para ser executado pelo processador. O escalonador é o
+responsável pela escolha do processo a ser executado. O método que o
+escalonador vai usar para escolher o próximo processo é chamado de
+algoritmo de escalonamento \cite{knuth:84}.
 
-O método que o escalonador vai usar para escolher o próximo processo é
-chamado de algoritmo de escalonamento. Esse relatório apresenta o
-funcionamento do escalonamento por loteria com complexidade de $O(\log
-n)$, sendo $n$ a quantidade máxima de processos, e sua implementação no
-sistema operacional xv6.
+Seja $n$ a quantidade máxima de processos que um sistema operacional
+pode executar, esse relatório apresenta a implementação e o
+funcionamento do escalonamento por loteria com complexidade de
+$O(\log^2 n)$ e do escalonamento em passos largos com complexidade de
+$O(\log n)$ no \textit{xv6}, um sistema operacional didático de código.
 
 \section{Escalonamento por loteria}
 
-Esse algoritmo de escalonamento funciona da seguinte forma: cada
-processo recebe uma quantidade de bilhetes, então sorteia-se um bilhete
-e o processo dono daquele bilhete é executado. Embora todos os processos
-tenham bilhetes, só os processos prontos(\textit{RUNNABLE} no xv6) devem
-ser sorteados. Assim surgiu a ideia do acumulo de bilhetes.
+Nesse algoritmo de escalonamento, cada processo recebe uma quantidade de
+bilhetes, então sorteia-se um bilhete e o processo dono daquele bilhete
+é executado. Os processos com mais bilhetes tem mais chance de serem
+executados e, dado o tempo necessário, todo processo será executado.
 
-Associamos cada processo a uma posição $i$ de um vetor que guarda a soma de
-bilhetes do processo na posição 0 até a posição $i$. Por exemplo, os processos
-$A$, $B$, $C$, $D$, $E$ com 10, 20, 5, 1 e 13 bilhetes, respectivamente,
-estão prontos. Por tanto, temos 49 bilhetes que podem ser sorteados e
-nosso vetor estaria da seguinte forma:
+Controlaremos a quantidade de bilhetes de cada processo através de um
+vetor de acúmulos. Esse vetor contém na posição $i$ a soma da quantidade
+de bilhetes do processo $i$ com a quantidade de bilhetes de todos os
+processos anteriores a $i$.
 
-\begin{table}[ht]
+Por exemplo, seja $A$, $B$, $C$, $D$, $E$ processos com 10, 20, 5, 1 e 13 bilhetes, respectivamente,
+em estado \textit{RUNNABLE}, ou seja, todos prontos para serem
+escolhidos pelo escalonador. Então, temos 49 bilhetes que podem ser sorteados e
+o vetor estaria conforme a Tabela~\ref{tab:ex1}.
+
+\begin{table}[h]
 \centering
-\caption{Exemplo do método de bilhetes acumulados 1}
+\caption{Vetor de acúmulo de bilhetes 1}
 \begin{tabular}{| c | c | c | c | c |}
 \hline
 A & B & C & D & E\\
@@ -81,21 +85,20 @@ A & B & C & D & E\\
 10 & 30 & 35 & 36 & 49\\
 \hline
 \end{tabular}
-\label{tab:Table1}
+\label{tab:ex1}
 \end{table}
 
 Isso significa que os bilhetes de $A$ estão entre 1 e 10, os de $B$
 entre 11 e 30, os de $C$ entre 31 e 35, o de $D$ é 36 e os de $E$ entre
 37 e 49. Então, suponhamos que o bilhete sorteado foi o 15, ou seja, o
-processo $B$ será executado. Mas durante sua execução foi bloqueado,
-isso implica que $B$ não pode mais ser executado enquanto não estiver
-\textit{RUNNABLE}. Portanto, no vetor onde guardamos os acúmulos,
-retiramos os bilhetes de $B$. O vetor de acúmulos estaria da seguinte
-maneira:
+processo $B$ será executado. Se, durante sua execução, ele foi bloqueado,
+$B$ não pode mais ser executado enquanto não estiver no estado
+pronto. Então, retiramos os bilhetes de $B$. O vetor de acúmulos estaria
+conforme a Tabela~\ref{tab:ex2}.
 
 \begin{table}[ht]
 \centering
-\caption{Exemplo do método de bilhetes acumulados 2}
+\caption{Vetor de acúmulo de bilhetes 2}
 \begin{tabular}{| c | c | c | c | c |}
 \hline
 A & B & C & D & E\\
@@ -103,36 +106,48 @@ A & B & C & D & E\\
 10 & 10 & 15 & 16 & 29\\
 \hline
 \end{tabular}
-\label{tab:Table2}
+\label{tab:ex2}
 \end{table}
 
 Agora, os bilhetes de $A$ estão entre 1 e 10, $B$ não tem bilhete, os
-bilhetes de $C$ estão entre 11 e 15, o de $D$ é 16 e os de $E$ entre 17
-e 29. Note que é apenas no vetor de acúmulos que os bilhetes são
-retirados, a informação que o $B$ tem 20 bilhetes continua guardada,
-pois quando ele estiver pronto novamente, devolveremos os bilhetes para
-o vetor de acumulos.
+bilhetes de $C$ estão entre 11 e 15, o bilhete de $D$ é 16 e os bilhetes
+de $E$ estão entre 17e 29. Quando $B$ estiver novamente no estado pronto
+(\textit{RUNNABLE} no \textit{xv6}), seus bilhetes são devolvidos e a
+o vetor voltaria a ficar conforme a Tabela~\ref{tab:ex1}.
 
-Trabalhando com o acumulo de bilhetes, fica simples de se implementar o
-sorteio de um bilhete, pois é um intervalo contínuo. Se tivéssemos
-atribuído números fixos aos bilhetes, quando um processo fosse bloqueado
-geraria uma buraco no intervalo de bilhetes a serem sorteados e teríamos
-que tratar para o sorteio não considerar esses buracos.
+Com o vetor dessa forma, temos sempre um intervalo bem definido sobre o
+qual podemos sortear um bilhete. Se tivéssemos atribuído números fixos
+aos bilhetes, por exemplo, se um processo $x$ sempre possuísse os bilhetes de
+15 a 30, quando esse processo fosse bloqueado, teríamos uma falha no
+intervalo de bilhetes a serem sorteados e teríamos que tratar para o
+sorteio não considerar essa falha.
 
-Assim, chega-se a outro problema: fazer o acúmulo de bilhetes de forma
-eficiente. Pois, como apresentado até agora, a ideia simples para fazer
-o cálculo desses acumulos seria percorrendo o vetor e atualizando cada
-posição, uma complexidade de $O(n)$, sendo $n$ a quantidade máxima de
-processos permitidos, para cada vez que fosse necessário atualizar a
+O próximo problema consiste em fazer o acúmulo de bilhetes de forma
+eficiente. Seja $n$ a quantidade máxima de processos permitidos no
+sistema operaciona, a forma ingênua para cálcular os valores das posições do vetor de acúmulo é percorrer
+as $n$ posições do vetor e atualizar cada posição $i$ com a quantidade de bilhetes
+do processo correspondente àquela posição somado com o acúmulo da
+posição $i - 1$ , uma complexidade de $O(n)$ para cada vez que fosse necessário atualizar a
 quantidade de bilhetes um processo. Porém, existe uma estrutura de dados
 chamada BIT -- Binary Indexed Tree -- que faz essa operação com
-complexidade $O(\log n)$, conforme \cite{boulic:91}.
+complexidade $O(\log n)$, conforme \cite{boulic:91}. Essa estrutura será
+explicada futuramente.
 
-Por fim, o último método utilizado para manter a complexidade baixa é
-buscar o processo com o bilhete sorteado através de uma busca
-binária. Portanto, o processo que adotamos é: sorteia um bilhete dentre
-os disponíveis, descobre que processo é dono desse bilhete através da
-busca binária, descrita a seguir.
+Por fim, temos que buscar o processo com o bilhete sorteado. A
+estratégia ingênua é percorrer linermente o vetor de acúmulo e a
+primeira posição que tiver acúmulo maior ou igual ao bilhete sorteado é
+a posição que corresponde processo dono do bilhete. Porém, a
+complexidade novamente é $O(n)$. Como sabemos que os acúmulos estão em ordem
+não decrescente, ou seja, podemos usar uma busca binária para encontrar
+o processo com o bilhete sorteado.
+
+A busca binária utiliza a estratégia de divisão e conquista. Começo
+considerando o intervalo de 1 a NPROC. Analiso a posição $m$ do meio do
+intervalo que estou considerando, se o acúmulo até a posição $m$ for
+maior ou igual ao bilhete sorteado, repito o processo considerando $m$ o
+final do meu intervalo, caso contrário repito o processo considerando
+$m$ o inicio do meu intervalo. Isso resulta numa complexidade de $O(\log
+n)$. Segue o código da busca, encontrado no arquivo \verb proc.c .
 
 \begin{verbatim}
 int bsearch(int ticket){
@@ -146,16 +161,20 @@ int bsearch(int ticket){
 }
 \end{verbatim}
 
+Para facilitar a busca, o $pid$ do processo corresponde a sua posição no
+vetor de acúmulos e $pid - 1$ é sua posição no vetor de
+processos. Por isso a busca retorna $l - 1$.
+
 \section{Binary Indexed Tree(BIT)}
 
 Inventada por Peter M. Fenwick em 1994, a BIT é uma estrutura de dados
 simples para implementar tabelas de frequências cumulativas. A
 implementação foi feita através de um vetor, onde cada posição guarda um
 acumulo parcial. Na implementação, a BIT é representada pelo vetor
-$stickets$. O vetor $idstack$ é uma pilha estática que guarda as
-posições da BIT não associadas a processos, $tp$ é em que posição se
-encontra o topo da pilha. É importante dizer que a posição 0 da BIT não
-é utilizada.
+\verb stickets. O vetor \verb idstack  é uma pilha estática que guarda as
+posições da BIT não associadas a processos, ou seja, os pids disponíveis
+que agora variam de 1 ao número de processos, $tp$ é a quantidade de
+pids disponíveis. Segue o novo código da estrutura \verb ptable .
 
 \begin{verbatim}
 struct {
@@ -166,15 +185,15 @@ struct {
 } ptable;
 \end{verbatim}
 
-De uma forma mais genérica, o elemento da posição $i$ da BIT $stickets$
-é responsável pelos elementos no intervalo [$i - (i $\verb+ AND +$-i) +
-  1$, $i$] e $stickets[i]$ guarda o acumulo dos bilhetes \{$i -
+De uma forma mais genérica, o elemento da posição $i$ da BIT
+\verb stickets  é responsável pelos elementos no intervalo [$i - (i $\verb+ AND + $-i) +
+  1$, $i$] e, portanto,  $stickets[i]$ guarda o acumulo dos bilhetes \{$i -
 (i$\verb+ AND +$-i) + 1$, $i - (i$\verb+ AND +$-i) + 2$, $i - (i
 $\verb+ AND +$ -i) + 3$, ... , i\}.
 
 Para obtermos o acúmulo de bilhetes de uma posição, usamos a função
-\emph{ticount}. Para atualizarmos uma posição da BIT com algum valor,
-usamos a função \emph{uptick}.
+\verb ticount . Para atualizarmos uma posição da BIT com algum valor,
+usamos a função \verb uptick .
 
 \begin{verbatim}
 int ticount(int i){
@@ -193,17 +212,18 @@ void uptick(int i, int value){
 \section{Mudanças no \emph{xv6}}
 
 Inicialmente, o $pid$ de um processo era definido por uma variável
-global. Toda vez que um processo recebia um $pid$, a global era
-incrementada. Porém, para facilitar a implementação do código e sua
-otimização, agora o $pid$ representa o índice da BIT associado ao processo. Toda
-vez que um processo termina, ele devolve seu $pid$ para a pilha
-$idstack$. Como cada processo tem um $pid$ único que varia de 1 a $n$,
-então também podemos usar o $pid$ para a indexação do processo no vetor
-de processos $ptable.proc$, obviamente subtraindo 1, pois as posições de
-$ptable.proc$ são de 0 a $n - 1$. Antes, quando um processo era criado,
-para achar uma posição livre no vetor de processos, este era percorrido
-linearmente. Agora, só retiramos da pilha um $pid$ disponível, o que é
-realizado em tempo $O(1)$.
+global. Toda vez que um processo recebia um $pid$, a variável global era
+incrementada. Porém, como explicado anteriormente, agora o $pid$ representa
+o índice da BIT associado ao processo. Toda vez que um
+processo termina, ele devolve seu $pid$ para a pilha
+\verb idstack . Como cada processo tem um $pid$ único que varia de 1
+ao número máximo de processos, então podemos usar o $pid - 1$ para a indexação do processo no vetor
+de processos.
+Antes, quando um processo era criado, o vetor de processos era percorrido
+linearmente até encontrar uma posição disponível, uma complexidade de
+$O(n)$. Agora, só retiramos da pilha um $pid$ disponível, o que é
+realizado em tempo $O(1)$. Abaixo há o código dessa alteração que se
+encontra no arquivo \verb proc.c . 
 
 \begin{verbatim}
 static struct proc* allocproc(void){
@@ -223,9 +243,9 @@ found:
 }
 \end{verbatim}
 
-Toda vez que o \emph{xv6} é inicializado, a função $clean$ é
+Toda vez que o \emph{xv6} é inicializado, a função \verb clean  é
 chamada. Ela é responsável por inicializar a pilha, ou seja, colocar
-todas as posições disponíveis da BIT na pilha, e zerar a BIT.
+todas os \verb pid  na pilha, e zerar a BIT.
 
 \begin{verbatim}
 void clean() {
@@ -267,8 +287,12 @@ void scheduler(void){
   }}
 \end{verbatim}
 
-Os bilhetes do processo são devolvidos quando o tempo dele no CPU
-termina e ele volta para o estado \emph{RUNNABLE}.
+Os bilhetes do processo são devolvidos quando o estado do processo volta
+a ser pronto (\textit{RUNNABLE}). Isso acontece em três situações:
+quando o tempo do processo no processador termina, quando o processo
+deixa de estar bloqueado e quando um processo que estava bloqueado é
+morto. Isso é feito nas funções \verb yield  , \verb wakeup1  e
+\verb kill , todas encontradas no arquivo \verb proc.c .
 
 \begin{verbatim}
 void yield(void){
@@ -277,6 +301,32 @@ void yield(void){
   uptick(proc->pid, proc->tickets);
   sched();
   release(&ptable.lock);
+}
+...
+static void wakeup1(void *chan){
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if (p->state == SLEEPING && p->chan == chan) {
+      p->state = RUNNABLE;
+      uptick(p->pid, p->tickets);
+    }
+}
+...
+int kill(int pid){
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      p->killed = 1;
+      if(p->state == SLEEPING){
+        uptick(p->pid, p->tickets);
+        p->state = RUNNABLE;
+      }
+      release(&ptable.lock);
+      return 0;
+    }}
+  release(&ptable.lock);
+  return -1;
 }
 \end{verbatim}
 
