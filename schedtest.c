@@ -17,18 +17,12 @@ rand()
 int
 main(void)
 {
-  int i, test, f, ticket, max = MAX;
-  int pid[NPROC];
-  for(ticket = 1, i = 0; i < NPROC; i++, ticket += NPROC) {
-    pid[i] = ticket;
-    printf(1, "%d: %d\n", i, pid[i]);
-  }
+  int i, test, max = MAX;
 
   for(test = 0; test < 10; test++) {
     printf(1, "\nTest %d... Creating processes...\n", test + 1);
     for(i = 0; i < NPROC; i++){
-      f = fork(pid[i]);
-      if(f == 0){
+      if(fork(NPROC - i) == 0){
         while(max--);
         // printf(1, "Process with %d tickets is done.\n", pid[i]);
         exit();

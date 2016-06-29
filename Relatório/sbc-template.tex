@@ -24,10 +24,10 @@
 \maketitle
 
 \begin{abstract}
-This paper presents lottery scheduling and stride scheduling
-implementation on xv6 operating system and analyzes if works as
-required. For the schedulers' implementation were used a Binary
-Indexed Tree -- BIT -- and a Segment Tree, both will be explained in this
+This paper presents lottery and stride scheduling
+implementations on xv6 operating system and analyzes if works as
+required. In the schedulers' implementations were used the data structs Binary
+Indexed Tree -- BIT -- and Segment Tree, both will be explained in this
 paper and from them we obtain a complexity analyzis.
 \end{abstract}
 
@@ -37,7 +37,7 @@ escalonamento distintos no sistema operacional \textit{xv6}, o
 escalonamento por loteria (\textit{lottery scheduling}) e o escalonamento
 em passos largos (\textit{stride scheduling}), com as respectivas
 análises de funcionamento. Nas implementações são apresentadas as estruturas de
-dados BIT -- Binary Indexed Tree -- e árvore de segmento e, apartir
+dados BIT -- Binary Indexed Tree -- e árvore de segmentos e, apartir
 dela, obtemos a complexidade de cada uma das soluções.
 \end{resumo}
 
@@ -54,11 +54,12 @@ algoritmo de escalonamento \cite{knuth:84}.
 
 Seja $n$ a quantidade máxima de processos que um sistema operacional
 pode executar, esse relatório apresenta a implementação e o
-funcionamento do escalonamento por loteria com complexidade de
+funcionamento do escalonamento por loteria com complexidade de decisão de
 $O(\log^2 n)$ e do escalonamento em passos largos com complexidade de
-$O(\log n)$ no \textit{xv6}, um sistema operacional didático de código.
+decisão de $O(\log n)$ no \textit{xv6}, um sistema operacional didático
+de código aberto.
 
-\section{Escalonamento por loteria}
+\section{Planejamento do escalonamento por loteria}
 
 Nesse algoritmo de escalonamento, cada processo recebe uma quantidade de
 bilhetes, então sorteia-se um bilhete e o processo dono daquele bilhete
@@ -112,7 +113,7 @@ A & B & C & D & E\\
 Agora, os bilhetes de $A$ estão entre 1 e 10, $B$ não tem bilhete, os
 bilhetes de $C$ estão entre 11 e 15, o bilhete de $D$ é 16 e os bilhetes
 de $E$ estão entre 17e 29. Quando $B$ estiver novamente no estado pronto
-(\textit{RUNNABLE} no \textit{xv6}), seus bilhetes são devolvidos e a
+(\textit{RUNNABLE} no \textit{xv6}), seus bilhetes são devolvidos e
 o vetor voltaria a ficar conforme a Tabela~\ref{tab:ex1}.
 
 Com o vetor dessa forma, temos sempre um intervalo bem definido sobre o
@@ -124,13 +125,13 @@ sorteio não considerar essa falha.
 
 O próximo problema consiste em fazer o acúmulo de bilhetes de forma
 eficiente. Seja $n$ a quantidade máxima de processos permitidos no
-sistema operaciona, a forma ingênua para cálcular os valores das posições do vetor de acúmulo é percorrer
+sistema operacional, a forma ingênua para cálcular os valores das posições do vetor de acúmulo é percorrer
 as $n$ posições do vetor e atualizar cada posição $i$ com a quantidade de bilhetes
 do processo correspondente àquela posição somado com o acúmulo da
 posição $i - 1$ , uma complexidade de $O(n)$ para cada vez que fosse necessário atualizar a
 quantidade de bilhetes um processo. Porém, existe uma estrutura de dados
 chamada BIT -- Binary Indexed Tree -- que faz essa operação com
-complexidade $O(\log n)$, conforme \cite{boulic:91}. Essa estrutura será
+complexidade $O(\log n)$ \cite{boulic:91}. Essa estrutura será
 explicada futuramente.
 
 Por fim, temos que buscar o processo com o bilhete sorteado. A
@@ -138,11 +139,13 @@ estratégia ingênua é percorrer linermente o vetor de acúmulo e a
 primeira posição que tiver acúmulo maior ou igual ao bilhete sorteado é
 a posição que corresponde processo dono do bilhete. Porém, a
 complexidade novamente é $O(n)$. Como sabemos que os acúmulos estão em ordem
-não decrescente, ou seja, podemos usar uma busca binária para encontrar
+não decrescente, podemos usar uma busca binária para encontrar
 o processo com o bilhete sorteado.
 
-A busca binária utiliza a estratégia de divisão e conquista. Começo
-considerando o intervalo de 1 a NPROC. Analiso a posição $m$ do meio do
+\section{Implementação e análise do escalonamento por loteria}
+\subsection{Busca Binária}
+A primeira implementação foi da busca binária, que utiliza a estratégia de divisão e conquista. Começa-se
+considerando o intervalo de 1 a NPROC. Analisa-se a posição $m$ do meio do
 intervalo que estou considerando, se o acúmulo até a posição $m$ for
 maior ou igual ao bilhete sorteado, repito o processo considerando $m$ o
 final do meu intervalo, caso contrário repito o processo considerando
@@ -161,19 +164,20 @@ int bsearch(int ticket){
 }
 \end{verbatim}
 
-Para facilitar a busca, o $pid$ do processo corresponde a sua posição no
-vetor de acúmulos e $pid - 1$ é sua posição no vetor de
-processos. Por isso a busca retorna $l - 1$.
+Para facilitar a busca, modificamos o código do \textit{xv6} para que o $pid$ do processo correspondesse a sua posição no
+vetor de acúmulos e $pid - 1$ fosse sua posição no vetor de
+processos. Por isso a busca retorna $l - 1$. Essas mudanças vão ser
+melhor comentadas futuramente.
 
-\section{Binary Indexed Tree(BIT)}
+\subsection{Binary Indexed Tree(BIT)}
 
 Inventada por Peter M. Fenwick em 1994, a BIT é uma estrutura de dados
 simples para implementar tabelas de frequências cumulativas. A
 implementação foi feita através de um vetor, onde cada posição guarda um
 acumulo parcial. Na implementação, a BIT é representada pelo vetor
-\verb stickets. O vetor \verb idstack  é uma pilha estática que guarda as
+\texttt{stickets}. O vetor \verb idstack  é uma pilha estática que guarda as
 posições da BIT não associadas a processos, ou seja, os pids disponíveis
-que agora variam de 1 ao número de processos, $tp$ é a quantidade de
+que agora variam de 1 ao número de processos, e $tp$ é a quantidade de
 pids disponíveis. Segue o novo código da estrutura \verb ptable .
 
 \begin{verbatim}
@@ -187,9 +191,9 @@ struct {
 
 De uma forma mais genérica, o elemento da posição $i$ da BIT
 \verb stickets  é responsável pelos elementos no intervalo [$i - (i $\verb+ AND + $-i) +
-  1$, $i$] e, portanto,  $stickets[i]$ guarda o acumulo dos bilhetes \{$i -
+  1$, $i$] e, portanto,  $stickets[i]$ guarda o acumulo dos bilhetes $i -
 (i$\verb+ AND +$-i) + 1$, $i - (i$\verb+ AND +$-i) + 2$, $i - (i
-$\verb+ AND +$ -i) + 3$, ... , i\}.
+$\verb+ AND +$ -i) + 3$, ... , i.
 
 Para obtermos o acúmulo de bilhetes de uma posição, usamos a função
 \verb ticount . Para atualizarmos uma posição da BIT com algum valor,
@@ -209,7 +213,7 @@ void uptick(int i, int value){
 }
 \end{verbatim}
 
-\section{Mudanças no \emph{xv6}}
+\subsection{Mudanças no código do \emph{xv6}}
 
 Inicialmente, o $pid$ de um processo era definido por uma variável
 global. Toda vez que um processo recebia um $pid$, a variável global era
@@ -245,7 +249,7 @@ found:
 
 Toda vez que o \emph{xv6} é inicializado, a função \verb clean  é
 chamada. Ela é responsável por inicializar a pilha, ou seja, colocar
-todas os \verb pid  na pilha, e zerar a BIT.
+todas os \textit{pid}  na pilha, e zerar a BIT.
 
 \begin{verbatim}
 void clean() {
@@ -257,12 +261,12 @@ void clean() {
 }
 \end{verbatim}
 
-E a função \emph{scheduler} é a responsável pela mudança de processo
+A função \verb scheduler  é a responsável pela mudança do processo
 em execução. Primeiro verificamos a quantidade de bilhetes
 disponíveis para serem soreados. Se essa quantidade for diferente de 0,
 ou seja, houver algum bilhete para ser sorteado, sorteamos um bilhete
 entre 1 e a quantidade de bilhetes. A busca binária retorna a posição no
-vetor \emph{ptable.proc} do processo que tinha o bilhete
+vetor \verb ptable.proc  do processo que tinha o bilhete
 sorteado. Então, retiramos os bilhetes desse processo e mudamos seu
 estado para \emph{RUNNING}.
 
@@ -288,7 +292,7 @@ void scheduler(void){
 \end{verbatim}
 
 Os bilhetes do processo são devolvidos quando o estado do processo volta
-a ser pronto (\textit{RUNNABLE}). Isso acontece em três situações:
+a estar pronto (\textit{RUNNABLE}). Isso acontece em três situações:
 quando o tempo do processo no processador termina, quando o processo
 deixa de estar bloqueado e quando um processo que estava bloqueado é
 morto. Isso é feito nas funções \verb yield  , \verb wakeup1  e
@@ -330,17 +334,16 @@ int kill(int pid){
 }
 \end{verbatim}
 
-\section{Análise de desempenho}
+\subsection{Análise de desempenho}
 Toda vez que o escalonador busca um processo para ser executado, é
 chamado a busca binária, que tem complexidade $O(\log n)$, porém, para
 acessar o valor do acúmulo numa posição $i$, a complexidade é também
-$O(\log n)$ \cite{boulic:91}. Ou seja, a complexidade total para escolher um processo
-seria $O(\log (n \cdot \log n))$. Desenvolvendo a conta:
-\begin{center}
-$O(\log(n\cdot\log n)) = O(\log n + \log (\log n)) = O(\log n)$
-\end{center}
+$O(\log n)$ \cite{boulic:91}. Ou seja, a complexidade total para
+escolher um processo seria $O(\log n \cdot \log n) = O(\log^2
+n)$. Nas situações já citadas em que um processo ganha ou perde tickets
+há o custo de atualização da BIT, $O(\log n)$.
 
-\section{Análise de testes}
+\subsection{Análise de testes}
 Para testar o funcionamento do que foi implementado, criamos um arquivo
 $schedtest$ no $xv6$. Quando executado, cria o máximo de processos
 possíveis. Cada processo decrementa uma variável que começa em
@@ -350,7 +353,7 @@ $exit()$ para que quando ela fosse chamada, exibisse a quantidade de
 tickets do processo que acabou.  Cada processo tem uma quantidade de
 bilhetes diferentes. Esse teste foi realizado 10 vezes com processos de
 mesma quantidade de bilhete. A quantidade de bilhetes de cada processo
-é ${nº do processo} \cdot 64 + 1$. 
+é ${nº do processo} \cdot 64 + 1$.
 
 O resultado obtido está apresentado na Tabela~\ref{tab:res}. Cada coluna
 representa um teste e cada linha representa a ordem que o processo
@@ -432,14 +435,294 @@ Teste 8 & Teste 9 & Teste 10\\
 
 Como podemos observar, um processo ter mais bilhetes não é garantia de
 que ele vai ganhar mais tempo no processador. Possívelmente pela pouca
-diferença de bilhetes entre cada processo e pelo $rand$ que foi
-implementado para os testes, isso se tornou mais evidente. Um exemplo
-disso é o processo 60 que foi o 26º a terminar no teste 4, embora possuísse mais
-bilhetes que qualquer outro processo, e nunca terminou por primeiro.
+diferença de bilhetes entre cada processo, pelo $rand$ que foi
+implementado para os testes e pelos processos serem consideravelmente
+rápidos, isso se tornou mais evidente. Um exemplo disso é o processo 60
+que foi o 26º a terminar no teste 4, embora possuísse mais bilhetes que
+qualquer outro processo, e nunca terminou por primeiro.
 
-Vale ressaltar que, embora aconteça o descrito acima, os processos com
-mais bilhetes ainda tendem a terminar antes, mas por ser um algoritmo
-probabilístico, não temos como dizer que isso sempre ocorre. 
+\section{Planejamento do escalonamento em passos largos}
+Da mesma forma que o escalonamento por loteria, cada processo recebe um
+número de bilhetes. Então, o passo desse processo é uma constante
+dividida pelo número de bilhetes do processo. Todo processo inicia com
+distância 0. O escalonador escolhe o processo com menor distancia para
+ser executado. Após ser selecionado, a distância do processo aumenta no
+seu valor do passo. A constante escolhida para essa implementação foi
+$10^{4}$.
+
+A primeira dificuldade encontrada foi como descobrir que processo tem a
+menor distância de forma eficiente. A solução ingênua seria percorrer as
+distâncias linearmente e verificar qual processos tem a menor, com uma
+complexidade de $O(N)$. Porém, podemos enxergar essas distâncias como a
+prioridade de cada processo e, assim, montarmos uma fila com
+prioridade. Existem várias formas de implementação, foi escolhido
+implementar a fila de prioridade com uma árvore de segmentos onde podemos
+descobrir o processo com menor prioridade em $O(1)$ e o custo para
+atualizar as prioridades é $O(log n)$.
+
+Uma árvore de segmentos, neste trabalho, é uma árvore binária balanceada
+em que cada nodo guarda o processo de menor distância entre seus
+filhos. Cada folha da árvore corresponde a uma posição no vetor de
+processos.
+
+Um problema dessa solução é que todo processo, independentemente de poder ser
+executado ou não, está na árvore. A solução elaborada foi
+adicionar uma posição sentinela ao vetor de processos com a distância
+igual a \verb INF ($2^{64} - 1$). Quando um processo não pode ser
+executado, atualizamos sua passada para \verb INF  e, no critério de
+desempate, o processo com menor \textit{pid} é escolhido. Ou seja,
+sabemos que não há processos a serem executados quando o processo de
+menor prioridade é o sentinela com \textit{pid} 0.
+
+\section{Implementação e análise do escalonamento em passos largos}
+\subsection{Árvore de segmentos}
+Para podermos trabalhar com o sentinela e ainda mantermos NPROC
+processos, foi adicionada uma posição ao vetor de processos. Uma
+consequência direta foi que o \textit{pid} de um processo agora poderia
+representar a posição dele no vetor de processos. Deve-se manter em
+mente que as mudanças realizadas no \textit{xv6} citadas anteriormente
+foram mantidas. Além disso, adicionamos dois novos vetores a estrutura
+\verb ptable , \verb st  para guardar a árvore e \verb stride  para guardar as
+distâncias de cada processo. E, cada processo além da quantidade de
+tickets agora tem uma variavel auxiliar para guardar a distância
+deles. A estrutura \verb ptable  está no arquivo \verb proc.c  e a
+estrutura do processo no arquivo \verb proc.h . \verb ull  é um
+\textit{define} encontrado no arquivo \verb stride.h  para abreviação de
+\textit{unsigned long long}.
+
+\begin{verbatim}
+struct proc {
+  uint sz;
+  pde_t* pgdir;
+  char *kstack;
+  enum procstate state;
+  int pid;
+  ...
+  int tickets;
+  ull prevstride;
+};
+
+struct {
+  ull stride[NPROC + 1];
+  ull st[4 * (NPROC + 1)];
+  int idstack[NPROC], tp;
+  struct spinlock lock;
+  struct proc proc[NPROC];
+} ptable;
+\end{verbatim}
+
+Antes de inicializarmos o escalonador ou alocarmos qualquer processo,
+devemos ter a arvore pronta. Para isso, na função \verb clean , já
+mostrada anteriormente, adicionamos a chamada da função \verb build  que
+se encarrega de montar a árvore pela primeira vez. Ela recebe de
+parâmetros a raiz da árvore e os limites do vetor que estamos
+considerando, no caso é o vetor de distâncias. Todas os próximos trechos
+de código podem ser encontrados no arquivo \verb proc.c .
+\begin{verbatim}
+void clean() {
+  acquire(&ptable.lock);
+  int i;
+  for (ptable.tp = 0; ptable.tp < NPROC; ptable.tp++)
+    ptable.idstack[ptable.tp] = NPROC - ptable.tp;
+  for (i = 0; i <= NPROC; i++) ptable.stride[i] = INF;
+  build(1, 0, NPROC);
+  release(&ptable.lock);
+}
+void build(int p, int l, int r) {
+  int m = (l + r) / 2, pidl, pidr;
+  if (l == r) { ptable.st[p] = l; return; }
+  build(left(p), l, m); build(right(p), m + 1, r);
+  pidl = ptable.st[left(p)]; pidr = ptable.st[right(p)];
+  ptable.st[p] =
+    ptable.stride[pidl] <= ptable.stride[pidr] ? pidl : pidr;
+}
+\end{verbatim}
+
+As outras funções relacionadas à árvore são a \verb update , que recebe
+de parâmetros a raiz da árvore, o intervalo que estamos considerando no
+nosso vetor de distâncias e \textit{pid} do processo precisa ser
+atualizado, responsável por atualizar os nodos da árvore, e a
+\verb query , que recebe de parâmetros a raiz da árvore, o intervalo que
+estamos considerando no nosso vetor de distâncias e o intervalo no qual
+queremos encontrar o  processo de menor distância, responsável por
+retornar o processo de menor distância no intervalo dado. Neste caso,
+sempre queremos saber quem tem a menor distância dentre todos os
+processos, por isso a função \verb query  poderia simplesmente retornar o
+processo na raiz da árvore, mas preferimos deixar a função mais completa
+possível visando modificações futuras no código.
+\begin{verbatim}
+int query(int p, int l, int r, int i, int j) {
+  int m = (l + r) / 2, pidl, pidr;
+  if (i > r || j < l) return 0;
+  if (i <= l && j >= r) return ptable.st[p];
+  pidl = query(left(p), l, m, i, j);
+  pidr = query(right(p), m + 1, r, i, j);
+  return ptable.stride[pidl]
+           <= ptable.stride[pidr] ? pidl : pidr;
+}
+
+void update(int p, int l, int r, int i) {
+  int m = (l + r) / 2, pidl, pidr;
+  if (i > r || i < l || (i == l && i == r)) return;
+  update(left(p), l, m, i); update(right(p), m + 1, r, i);
+  pidl = ptable.st[left(p)]; pidr = ptable.st[right(p)];
+  ptable.st[p] =
+    ptable.stride[pidl] <= ptable.stride[pidr] ? pidl : pidr;
+}
+\end{verbatim}
+
+A função \texttt{scheduler} funciona da mesma forma que no escalonamento
+por loteria. Se existe processo para ser executado, ou seja, se o
+\textit{pid} retornado pela busca for diferente do sentila, marcamos
+esse processo como \textit{RUNNING} e, para ele não ser escolhido
+novamente por outro CPU, guardamos a distância atual do processo na
+variável \verb prevstride  dele, colocamos sua distância como
+\verb INF  e atualizamos a sua prioridade na árvore.
+\begin{verbatim}
+void scheduler(void) {
+  ...
+  for(;;){
+    sti();
+    acquire(&ptable.lock);
+    if ((pid = query(1, 0, NPROC, 0, NPROC)) != 0) {
+      p = &ptable.proc[pid - 1];
+      p->prevstride = ptable.stride[pid];
+      ptable.stride[pid] = INF;
+      update(1, 0, NPROC, pid);
+      proc = p; switchuvm(p);
+      p->state = RUNNING;
+      swtch(&cpu->scheduler, proc->context);
+      switchkvm();
+      proc = 0;
+    }
+    release(&ptable.lock);
+  }}
+\end{verbatim}
+
+Por fim, ainda confrome o escalonador por loteria, é necessário devolver a
+distância a um processo quando ele volta a ser pronto
+(\textit{RUNNABLE}) nas funções \texttt{yield}, \texttt{wakeup1}  e
+\verb kill , onde devolvemos a distância anterior somado ao passo do
+processo. A operação é feito mod \verb INF  para que nenhum processo que
+possa ser executado tenha valor igual a \verb INF .
+\begin{verbatim}
+void yield(void) {
+  acquire(&ptable.lock);
+  proc->state = RUNNABLE;
+  ptable.stride[proc->pid] =
+    (proc->prevstride + CONS / proc->tickets) % INF;
+  update(1, 0, NPROC, proc->pid);
+  sched();
+  release(&ptable.lock);
+}
+static void wakeup1(void *chan) {
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if (p->state == SLEEPING && p->chan == chan) {
+      p->state = RUNNABLE;
+      ptable.stride[p->pid]
+         = (p->prevstride + CONS / p->tickets) % INF;
+      update(1, 0, NPROC, p->pid);
+    }
+}
+\end{verbatim}
+
+\subsection{Análise de desempenho}
+Toda vez que o escalonador busca um processo para ser executado, é
+chamado a função \verb query , que normalmente tem complexidade $O(\log
+n)$, porém, como sempre queremos saber apenas sobre a informação da
+raiz, ela é executada em $O(1)$. Construir a árvore tem complexidade
+$O(N)$, mas esse custo é pago somente uma vez antes de inicializar o
+sistema. Para atualizar a árvore, existe um custo de $O(\log n)$. Isso
+ocorre quando devemos atualizar a distância de um processo
+\cite{boulic:91}.
+
+\subsection{Análise de testes}
+Os testes foram realizados também com o arquivo \textit{schedtest}, com
+pequenas alterações. O resultado obtido está apresentado na Tabela~\ref{tab:res1}. Cada coluna
+representa um teste e cada linha representa a ordem na qual o processo
+com determina quantidade de bilhetes terminou. Por exemplo, o processo
+com 57 bilhetes foi o quarto a terminar no teste 1.
+
+Foram alocados vários processos, cada processo inicia com uma variável
+na ordem de grandeza de $10^8$ e fica a decrementando. Quando essa
+variável chega a 0, o processo morre. Com os testes podemos observar que
+as prioridades em geral são respeitadas e o escalonador funciona conforme
+o esperado. Para realizar o teste, cada vez que um processo morria, o
+número de tickets desse processo era printado na função \verb exit .
+
+\begin{table}[!h]
+\centering
+\begin{scriptsize}
+\begin{tabular}{c | c | c | c | c | c | c | c | c | c}
+Teste 1 & Teste 2 & Teste 3 & Teste 4 & Teste 5 & Teste 6 & Teste 7 &
+Teste 8 & Teste 9 & Teste 10\\
+\hline
+60 & 60 & 59 & 60 & 60 & 60 & 60 & 59 & 60 & 60\\
+59 & 58 & 60 & 58 & 59 & 59 & 59 & 60 & 59 & 58\\
+58 & 59 & 58 & 59 & 58 & 58 & 58 & 57 & 58 & 59\\
+57 & 56 & 56 & 57 & 56 & 57 & 57 & 55 & 57 & 57\\
+56 & 57 & 57 & 56 & 57 & 56 & 55 & 58 & 56 & 56\\
+55 & 55 & 55 & 55 & 54 & 55 & 56 & 56 & 54 & 55\\
+54 & 54 & 54 & 53 & 55 & 54 & 53 & 51 & 55 & 52\\
+53 & 53 & 53 & 54 & 53 & 53 & 54 & 50 & 52 & 54\\
+51 & 51 & 52 & 52 & 52 & 52 & 52 & 49 & 51 & 53\\
+52 & 50 & 51 & 51 & 49 & 51 & 51 & 54 & 53 & 51\\
+49 & 52 & 50 & 50 & 51 & 49 & 49 & 48 & 49 & 49\\
+50 & 48 & 49 & 48 & 50 & 50 & 50 & 53 & 50 & 48\\
+48 & 49 & 48 & 49 & 47 & 48 & 48 & 46 & 48 & 50\\
+46 & 46 & 47 & 47 & 48 & 47 & 47 & 52 & 47 & 45\\
+47 & 47 & 46 & 45 & 46 & 46 & 46 & 45 & 46 & 44\\
+45 & 45 & 45 & 46 & 45 & 45 & 43 & 44 & 45 & 46\\
+44 & 44 & 44 & 43 & 43 & 43 & 44 & 47 & 44 & 47\\
+43 & 43 & 43 & 44 & 44 & 44 & 45 & 41 & 43 & 41\\
+42 & 41 & 42 & 42 & 42 & 42 & 42 & 42 & 42 & 40\\
+41 & 42 & 40 & 41 & 41 & 41 & 41 & 40 & 41 & 38\\
+40 & 39 & 41 & 39 & 40 & 40 & 40 & 39 & 40 & 43\\
+39 & 40 & 39 & 40 & 39 & 39 & 38 & 43 & 39 & 42\\
+38 & 38 & 38 & 38 & 38 & 38 & 39 & 37 & 38 & 39\\
+36 & 37 & 36 & 36 & 37 & 37 & 37 & 38 & 37 & 36\\
+37 & 36 & 37 & 37 & 36 & 36 & 36 & 36 & 36 & 37\\
+35 & 35 & 34 & 35 & 35 & 35 & 35 & 35 & 35 & 32\\
+34 & 34 & 35 & 34 & 34 & 34 & 34 & 34 & 34 & 31\\
+33 & 33 & 33 & 33 & 33 & 33 & 33 & 33 & 33 & 33\\
+32 & 32 & 32 & 32 & 32 & 32 & 32 & 32 & 31 & 35\\
+31 & 31 & 31 & 30 & 31 & 31 & 31 & 31 & 32 & 34\\
+30 & 30 & 30 & 31 & 29 & 30 & 30 & 30 & 30 & 30\\
+29 & 29 & 29 & 29 & 28 & 29 & 29 & 29 & 29 & 29\\
+28 & 28 & 28 & 28 & 30 & 28 & 28 & 28 & 28 & 28\\
+27 & 27 & 27 & 27 & 27 & 27 & 27 & 26 & 27 & 27\\
+26 & 26 & 26 & 26 & 26 & 26 & 25 & 25 & 26 & 26\\
+25 & 25 & 25 & 25 & 25 & 25 & 26 & 27 & 25 & 25\\
+24 & 24 & 24 & 24 & 23 & 24 & 24 & 24 & 23 & 24\\
+23 & 23 & 23 & 23 & 24 & 22 & 23 & 23 & 24 & 23\\
+21 & 22 & 22 & 22 & 22 & 23 & 22 & 22 & 22 & 22\\
+22 & 21 & 21 & 21 & 21 & 21 & 20 & 20 & 21 & 21\\
+20 & 20 & 20 & 19 & 20 & 20 & 21 & 21 & 20 & 20\\
+19 & 19 & 19 & 20 & 19 & 19 & 19 & 19 & 18 & 19\\
+18 & 18 & 18 & 18 & 18 & 18 & 18 & 18 & 19 & 18\\
+17 & 17 & 17 & 17 & 17 & 17 & 17 & 17 & 17 & 17\\
+16 & 16 & 16 & 16 & 16 & 16 & 16 & 16 & 16 & 16\\
+15 & 15 & 15 & 15 & 15 & 15 & 15 & 15 & 15 & 14\\
+14 & 14 & 14 & 14 & 14 & 14 & 14 & 14 & 14 & 15\\
+13 & 13 & 13 & 13 & 13 & 13 & 13 & 13 & 13 & 13\\
+12 & 12 & 12 & 12 & 12 & 12 & 12 & 12 & 12 & 12\\
+11 & 11 & 11 & 11 & 11 & 11 & 11 & 11 & 11 & 11\\
+10 & 10 & 10 & 10 & 10 & 10 & 10 & 10 & 10 & 10\\
+9 & 9 & 9 & 9 & 9 & 9 & 9 & 9 & 9 & 9\\
+8 & 8 & 8 & 8 & 8 & 8 & 8 & 8 & 8 & 8\\
+7 & 7 & 7 & 7 & 7 & 7 & 7 & 7 & 7 & 7\\
+6 & 6 & 6 & 6 & 6 & 6 & 6 & 6 & 6 & 6\\
+5 & 5 & 5 & 5 & 5 & 5 & 5 & 5 & 5 & 5\\
+4 & 4 & 4 & 4 & 4 & 4 & 4 & 4 & 4 & 4\\
+3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3\\
+2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2\\
+1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1\\
+\end{tabular}
+\end{scriptsize}
+\caption{Resultados}
+\label{tab:res1}
+\end{table}
 
 \newpage
 
